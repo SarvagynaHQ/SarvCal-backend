@@ -7,7 +7,7 @@ yarn-debug.log
 yarn-error.log
 
 # Ignore environment files
-.env
+# .env (removed to allow committing .env)
 .env.local
 
 # Ignore build artifacts or any compiled files (if you use TypeScript or other compilers)
