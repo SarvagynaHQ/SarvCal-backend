@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const passport_config_1 = require("../config/passport.config");
+const availability_controller_1 = require("../controllers/availability.controller");
+const availabilityRoutes = (0, express_1.Router)();
+availabilityRoutes.get("/me", passport_config_1.passportAuthenticateJwt, availability_controller_1.getUserAvailabilityController);
+availabilityRoutes.get("/public/:eventId", availability_controller_1.getAvailabilityForPublicEventController);
+availabilityRoutes.put("/update", passport_config_1.passportAuthenticateJwt, availability_controller_1.updateAvailabilityController);
+exports.default = availabilityRoutes;
