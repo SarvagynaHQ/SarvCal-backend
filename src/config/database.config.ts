@@ -16,7 +16,6 @@ export const getDatabaseConfig = () => {
     synchronize: !isProduction,
     logging: isProduction ? false : ["error"],
     ssl: {
-      // Accept self-signed certificates for Render deployments
       rejectUnauthorized: false,
     },
   });
