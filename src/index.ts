@@ -34,9 +34,8 @@ app.use(
 app.get(
   "/",
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    throw new BadRequestException("throwing async error");
     res.status(HTTPSTATUS.OK).json({
-      message: "Hello Subscribe to the channel",
+      message: "Hello we are Sarvagyna LLC",
     });
   })
 );

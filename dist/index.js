@@ -11,7 +11,6 @@ const app_config_1 = require("./config/app.config");
 const http_config_1 = require("./config/http.config");
 const errorHandler_middleware_1 = require("./middlewares/errorHandler.middleware");
 const asyncHandler_middeware_1 = require("./middlewares/asyncHandler.middeware");
-const app_error_1 = require("./utils/app-error");
 const database_1 = require("./database/database");
 const auth_route_1 = __importDefault(require("./routes/auth.route"));
 const passport_1 = __importDefault(require("passport"));
@@ -29,7 +28,6 @@ app.use((0, cors_1.default)({
     credentials: true,
 }));
 app.get("/", (0, asyncHandler_middeware_1.asyncHandler)(async (req, res, next) => {
-    throw new app_error_1.BadRequestException("throwing async error");
     res.status(http_config_1.HTTPSTATUS.OK).json({
         message: "Hello Subscribe to the channel",
     });
