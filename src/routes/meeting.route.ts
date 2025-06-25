@@ -3,6 +3,7 @@ import {
   cancelMeetingController,
   createMeetBookingForGuestController,
   getUserMeetingsController,
+  getBookedSlotsController,
 } from "../controllers/meeting.controller";
 import { passportAuthenticateJwt } from "../config/passport.config";
 
@@ -15,6 +16,8 @@ meetingRoutes.get(
 );
 
 meetingRoutes.post("/public/create", createMeetBookingForGuestController);
+
+meetingRoutes.get("/public/booked-slots/:eventId", getBookedSlotsController);
 
 meetingRoutes.put(
   "/cancel/:meetingId",

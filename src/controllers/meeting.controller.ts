@@ -9,9 +9,10 @@ import {
   cancelMeetingService,
   createMeetBookingForGuestService,
   getUserMeetingsService,
+  getBookedSlotsByEventIdService,
 } from "../services/meeting.service";
 import { asyncHandlerAndValidation } from "../middlewares/withValidation.middleware";
-import { CreateMeetingDto, MeetingIdDTO } from "../database/dto/meeting.dto";
+import { CreateMeetingDto, MeetingIdDTO, EventIdDTO } from "../database/dto/meeting.dto";
 
 export const getUserMeetingsController = asyncHandler(
   async (req: Request, res: Response) => {
@@ -54,6 +55,18 @@ export const cancelMeetingController = asyncHandlerAndValidation(
     await cancelMeetingService(meetingIdDto.meetingId);
     return res.status(HTTPSTATUS.OK).json({
       messsage: "Meeting cancelled successfully",
+    });
+  }
+);
+
+export const getBookedSlotsController = asyncHandlerAndValidation(
+  EventIdDTO,
+  "params",
+  async (req: Request, res: Response, eventIdDto) => {
+    const bookedSlots = await getBookedSlotsByEventIdService(eventIdDto.eventId);
+    return res.status(HTTPSTATUS.OK).json({
+      message: "Booked slots retrieved successfully",
+      bookedSlots,
     });
   }
 );

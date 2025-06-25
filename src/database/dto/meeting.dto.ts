@@ -38,3 +38,9 @@ export class MeetingIdDTO {
   @IsNotEmpty()
   meetingId: string;
 }
+
+export class EventIdDTO {
+  @IsUUID(4, { message: "Invalid event ID" })
+  @IsNotEmpty()
+  eventId: string;
+}

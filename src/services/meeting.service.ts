@@ -50,6 +50,38 @@ export const getUserMeetingsService = async (
   return meetings || [];
 };
 
+export const getBookedSlotsByEventIdService = async (eventId: string) => {
+  const meetingRepository = AppDataSource.getRepository(Meeting);
+  const eventRepository = AppDataSource.getRepository(Event);
+
+  // First verify the event exists
+  const event = await eventRepository.findOne({
+    where: { id: eventId }
+  });
+
+  if (!event) {
+    throw new NotFoundException("Event not found");
+  }
+
+  // Get all scheduled meetings for this event
+  const bookedMeetings = await meetingRepository.find({
+    where: {
+      event: { id: eventId },
+      status: MeetingStatus.SCHEDULED,
+      startTime: MoreThan(new Date()) // Only future meetings
+    },
+    order: { startTime: "ASC" }
+  });
+
+  // Extract time slots in HH:MM format
+  const bookedSlots = bookedMeetings.map(meeting => {
+    const startTime = new Date(meeting.startTime);
+    return startTime.toTimeString().slice(0, 5); // Extract HH:MM format
+  });
+
+  return bookedSlots;
+};
+
 export const createMeetBookingForGuestService = async (
   createMeetingDto: CreateMeetingDto
 ) => {
