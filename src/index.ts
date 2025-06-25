@@ -56,6 +56,7 @@ app.use(
 app.get(
   "/",
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    // Updated with booked slots endpoint
     res.status(HTTPSTATUS.OK).json({
       message: "Hello we are Sarvagyna LLC",
     });

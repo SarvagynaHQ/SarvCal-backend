@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelMeetingController = exports.createMeetBookingForGuestController = exports.getUserMeetingsController = void 0;
+exports.getBookedSlotsController = exports.cancelMeetingController = exports.createMeetBookingForGuestController = exports.getUserMeetingsController = void 0;
 const asyncHandler_middeware_1 = require("../middlewares/asyncHandler.middeware");
 const http_config_1 = require("../config/http.config");
 const meeting_enum_1 = require("../enums/meeting.enum");
@@ -31,5 +31,12 @@ exports.cancelMeetingController = (0, withValidation_middleware_1.asyncHandlerAn
     await (0, meeting_service_1.cancelMeetingService)(meetingIdDto.meetingId);
     return res.status(http_config_1.HTTPSTATUS.OK).json({
         messsage: "Meeting cancelled successfully",
+    });
+});
+exports.getBookedSlotsController = (0, withValidation_middleware_1.asyncHandlerAndValidation)(meeting_dto_1.EventIdDTO, "params", async (req, res, eventIdDto) => {
+    const bookedSlots = await (0, meeting_service_1.getBookedSlotsByEventIdService)(eventIdDto.eventId);
+    return res.status(http_config_1.HTTPSTATUS.OK).json({
+        message: "Booked slots retrieved successfully",
+        bookedSlots,
     });
 });

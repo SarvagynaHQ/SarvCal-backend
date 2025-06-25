@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelMeetingService = exports.createMeetBookingForGuestService = exports.getUserMeetingsService = void 0;
+exports.cancelMeetingService = exports.createMeetBookingForGuestService = exports.getBookedSlotsByEventIdService = exports.getUserMeetingsService = void 0;
 const typeorm_1 = require("typeorm");
 const database_config_1 = require("../config/database.config");
 const meeting_entity_1 = require("../database/entities/meeting.entity");
@@ -37,6 +37,33 @@ const getUserMeetingsService = async (userId, filter) => {
     return meetings || [];
 };
 exports.getUserMeetingsService = getUserMeetingsService;
+const getBookedSlotsByEventIdService = async (eventId) => {
+    const meetingRepository = database_config_1.AppDataSource.getRepository(meeting_entity_1.Meeting);
+    const eventRepository = database_config_1.AppDataSource.getRepository(event_entity_1.Event);
+    // First verify the event exists
+    const event = await eventRepository.findOne({
+        where: { id: eventId }
+    });
+    if (!event) {
+        throw new app_error_1.NotFoundException("Event not found");
+    }
+    // Get all scheduled meetings for this event
+    const bookedMeetings = await meetingRepository.find({
+        where: {
+            event: { id: eventId },
+            status: meeting_entity_1.MeetingStatus.SCHEDULED,
+            startTime: (0, typeorm_1.MoreThan)(new Date()) // Only future meetings
+        },
+        order: { startTime: "ASC" }
+    });
+    // Extract time slots in HH:MM format
+    const bookedSlots = bookedMeetings.map(meeting => {
+        const startTime = new Date(meeting.startTime);
+        return startTime.toTimeString().slice(0, 5); // Extract HH:MM format
+    });
+    return bookedSlots;
+};
+exports.getBookedSlotsByEventIdService = getBookedSlotsByEventIdService;
 const createMeetBookingForGuestService = async (createMeetingDto) => {
     const { eventId, guestEmail, guestName, additionalInfo } = createMeetingDto;
     const startTime = new Date(createMeetingDto.startTime);
