@@ -26,8 +26,30 @@ app.use(passport.initialize());
 
 app.use(
   cors({
-    origin: config.FRONTEND_ORIGIN,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        config.FRONTEND_ORIGIN,
+        config.FRONTEND_ORIGIN.replace(/\/$/, ""), // Remove trailing slash
+        config.FRONTEND_ORIGIN + (config.FRONTEND_ORIGIN.endsWith("/") ? "" : "/"), // Add trailing slash
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://sarvcal.vercel.app",
+        "https://sarvcal.vercel.app/"
+      ];
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log(`CORS blocked origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 

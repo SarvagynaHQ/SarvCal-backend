@@ -24,12 +24,34 @@ app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use(passport_1.default.initialize());
 app.use((0, cors_1.default)({
-    origin: app_config_1.config.FRONTEND_ORIGIN,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin)
+            return callback(null, true);
+        const allowedOrigins = [
+            app_config_1.config.FRONTEND_ORIGIN,
+            app_config_1.config.FRONTEND_ORIGIN.replace(/\/$/, ""), // Remove trailing slash
+            app_config_1.config.FRONTEND_ORIGIN + (app_config_1.config.FRONTEND_ORIGIN.endsWith("/") ? "" : "/"), // Add trailing slash
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "https://sarvcal.vercel.app",
+            "https://sarvcal.vercel.app/"
+        ];
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            console.log(`CORS blocked origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 app.get("/", (0, asyncHandler_middeware_1.asyncHandler)(async (req, res, next) => {
     res.status(http_config_1.HTTPSTATUS.OK).json({
-        message: "Hello Subscribe to the channel",
+        message: "Hello we are Sarvagyna LLC",
     });
 }));
 app.use(`${BASE_PATH}/auth`, auth_route_1.default);
