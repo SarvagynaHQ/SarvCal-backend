@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAvailableSlotsController = exports.getBookedSlotsController = exports.cancelMeetingController = exports.createMeetBookingForGuestController = exports.getUserMeetingsController = void 0;
+exports.getAllBookedSlotsController = exports.getAvailableSlotsController = exports.getBookedSlotsController = exports.cancelMeetingController = exports.createMeetBookingForGuestController = exports.getUserMeetingsController = void 0;
 const asyncHandler_middeware_1 = require("../middlewares/asyncHandler.middeware");
 const http_config_1 = require("../config/http.config");
 const meeting_enum_1 = require("../enums/meeting.enum");
@@ -65,5 +65,25 @@ exports.getAvailableSlotsController = (0, asyncHandler_middeware_1.asyncHandler)
     return res.status(http_config_1.HTTPSTATUS.OK).json({
         message: "Available slots retrieved successfully",
         data: availability,
+    });
+});
+exports.getAllBookedSlotsController = (0, asyncHandler_middeware_1.asyncHandler)(async (req, res) => {
+    const { date } = req.query;
+    if (!date || typeof date !== 'string') {
+        return res.status(http_config_1.HTTPSTATUS.BAD_REQUEST).json({
+            message: 'Date parameter is required in YYYY-MM-DD format'
+        });
+    }
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(http_config_1.HTTPSTATUS.BAD_REQUEST).json({
+            message: 'Invalid date format. Use YYYY-MM-DD'
+        });
+    }
+    const bookedSlots = await (0, meeting_service_1.getAllBookedSlotsService)(date);
+    return res.status(http_config_1.HTTPSTATUS.OK).json({
+        message: 'All booked slots retrieved successfully',
+        date,
+        bookedSlots
     });
 });

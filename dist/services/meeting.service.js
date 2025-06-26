@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelMeetingService = exports.createMeetBookingForGuestService = exports.getAvailableSlotsService = exports.getBookedSlotsByEventIdService = exports.getUserMeetingsService = void 0;
+exports.cancelMeetingService = exports.createMeetBookingForGuestService = exports.getAllBookedSlotsService = exports.getAvailableSlotsService = exports.getBookedSlotsByEventIdService = exports.getUserMeetingsService = void 0;
 const typeorm_1 = require("typeorm");
 const database_config_1 = require("../config/database.config");
 const meeting_entity_1 = require("../database/entities/meeting.entity");
@@ -203,6 +203,48 @@ const getAvailableSlotsService = async (eventId, date) => {
     }
 };
 exports.getAvailableSlotsService = getAvailableSlotsService;
+const getAllBookedSlotsService = async (dateString) => {
+    const meetingRepository = database_config_1.AppDataSource.getRepository(meeting_entity_1.Meeting);
+    // Parse the date and create start/end of day
+    const requestedDate = new Date(dateString);
+    const startOfDay = new Date(requestedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(requestedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    // Get all scheduled meetings for the requested date across all events
+    const bookedMeetings = await meetingRepository.find({
+        where: {
+            status: meeting_entity_1.MeetingStatus.SCHEDULED,
+            startTime: (0, typeorm_1.MoreThan)(startOfDay),
+            endTime: (0, typeorm_1.LessThan)(endOfDay)
+        },
+        relations: ['event'],
+        select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            event: {
+                id: true,
+                title: true,
+                duration: true
+            }
+        }
+    });
+    // Convert meetings to time slot format
+    const bookedSlots = bookedMeetings.map(meeting => {
+        const startTime = new Date(meeting.startTime);
+        return {
+            time: startTime.toTimeString().slice(0, 5), // HH:MM format
+            startTime: meeting.startTime.toISOString(),
+            endTime: meeting.endTime.toISOString(),
+            eventId: meeting.event.id,
+            eventTitle: meeting.event.title,
+            duration: meeting.event.duration
+        };
+    });
+    return bookedSlots;
+};
+exports.getAllBookedSlotsService = getAllBookedSlotsService;
 const createMeetBookingForGuestService = async (createMeetingDto) => {
     const { eventId, guestEmail, guestName, additionalInfo } = createMeetingDto;
     const startTime = new Date(createMeetingDto.startTime);

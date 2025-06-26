@@ -11,6 +11,7 @@ import {
   getUserMeetingsService,
   getBookedSlotsByEventIdService,
   getAvailableSlotsService,
+  getAllBookedSlotsService,
 } from "../services/meeting.service";
 import { asyncHandlerAndValidation } from "../middlewares/withValidation.middleware";
 import { CreateMeetingDto, MeetingIdDTO, EventIdDTO, AvailableSlotsDTO } from "../database/dto/meeting.dto";
@@ -105,6 +106,33 @@ export const getAvailableSlotsController = asyncHandler(
     return res.status(HTTPSTATUS.OK).json({
       message: "Available slots retrieved successfully",
       data: availability,
+    });
+  }
+);
+
+export const getAllBookedSlotsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { date } = req.query;
+    
+    if (!date || typeof date !== 'string') {
+      return res.status(HTTPSTATUS.BAD_REQUEST).json({
+        message: 'Date parameter is required in YYYY-MM-DD format'
+      });
+    }
+
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(HTTPSTATUS.BAD_REQUEST).json({
+        message: 'Invalid date format. Use YYYY-MM-DD'
+      });
+    }
+
+    const bookedSlots = await getAllBookedSlotsService(date);
+    
+    return res.status(HTTPSTATUS.OK).json({
+      message: 'All booked slots retrieved successfully',
+      date,
+      bookedSlots
     });
   }
 );

@@ -252,6 +252,53 @@ export const getAvailableSlotsService = async (eventId: string, date: string) =>
   }
 };
 
+export const getAllBookedSlotsService = async (dateString: string) => {
+  const meetingRepository = AppDataSource.getRepository(Meeting);
+  
+  // Parse the date and create start/end of day
+  const requestedDate = new Date(dateString);
+  const startOfDay = new Date(requestedDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(requestedDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Get all scheduled meetings for the requested date across all events
+  const bookedMeetings = await meetingRepository.find({
+    where: {
+      status: MeetingStatus.SCHEDULED,
+      startTime: MoreThan(startOfDay),
+      endTime: LessThan(endOfDay)
+    },
+    relations: ['event'],
+    select: {
+      id: true,
+      startTime: true,
+      endTime: true,
+      event: {
+        id: true,
+        title: true,
+        duration: true
+      }
+    }
+  });
+
+  // Convert meetings to time slot format
+  const bookedSlots = bookedMeetings.map(meeting => {
+    const startTime = new Date(meeting.startTime);
+    return {
+      time: startTime.toTimeString().slice(0, 5), // HH:MM format
+      startTime: meeting.startTime.toISOString(),
+      endTime: meeting.endTime.toISOString(),
+      eventId: meeting.event.id,
+      eventTitle: meeting.event.title,
+      duration: meeting.event.duration
+    };
+  });
+
+  return bookedSlots;
+};
+
 export const createMeetBookingForGuestService = async (
   createMeetingDto: CreateMeetingDto
 ) => {
