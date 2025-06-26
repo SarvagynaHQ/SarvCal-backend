@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.googleOAuthCallbackController = exports.connectAppController = exports.checkIntegrationController = exports.getUserIntegrationsController = void 0;
+exports.checkGoogleCalendarIntegrationController = exports.googleOAuthCallbackController = exports.connectAppController = exports.checkIntegrationController = exports.getUserIntegrationsController = void 0;
 const asyncHandler_middeware_1 = require("../middlewares/asyncHandler.middeware");
 const http_config_1 = require("../config/http.config");
 const integration_service_1 = require("../services/integration.service");
@@ -65,4 +65,24 @@ exports.googleOAuthCallbackController = (0, asyncHandler_middeware_1.asyncHandle
         },
     });
     return res.redirect(`${CLIENT_URL}&success=true`);
+});
+exports.checkGoogleCalendarIntegrationController = (0, asyncHandler_middeware_1.asyncHandler)(async (req, res) => {
+    const { eventId } = req.params;
+    if (!eventId) {
+        return res.status(http_config_1.HTTPSTATUS.BAD_REQUEST).json({
+            message: "eventId is required",
+        });
+    }
+    // Validate UUID format for eventId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(eventId)) {
+        return res.status(http_config_1.HTTPSTATUS.BAD_REQUEST).json({
+            message: "Invalid eventId format. Must be a valid UUID.",
+        });
+    }
+    const integrationInfo = await (0, integration_service_1.checkGoogleCalendarIntegrationForEventService)(eventId);
+    return res.status(http_config_1.HTTPSTATUS.OK).json({
+        message: "Google Calendar integration checked successfully",
+        ...integrationInfo,
+    });
 });

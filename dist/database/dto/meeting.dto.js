@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EventIdDTO = exports.MeetingIdDTO = exports.CreateMeetingDto = void 0;
+exports.AvailableSlotsDTO = exports.EventIdDTO = exports.MeetingIdDTO = exports.CreateMeetingDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateMeetingDto {
 }
@@ -60,3 +60,16 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], EventIdDTO.prototype, "eventId", void 0);
+class AvailableSlotsDTO {
+}
+exports.AvailableSlotsDTO = AvailableSlotsDTO;
+__decorate([
+    (0, class_validator_1.IsUUID)(4, { message: "Invalid event ID" }),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AvailableSlotsDTO.prototype, "eventId", void 0);
+__decorate([
+    (0, class_validator_1.IsDateString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AvailableSlotsDTO.prototype, "date", void 0);

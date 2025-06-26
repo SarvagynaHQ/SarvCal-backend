@@ -50,6 +50,7 @@ app.use((0, cors_1.default)({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 app.get("/", (0, asyncHandler_middeware_1.asyncHandler)(async (req, res, next) => {
+    // Updated with booked slots endpoint
     res.status(http_config_1.HTTPSTATUS.OK).json({
         message: "Hello we are Sarvagyna LLC",
     });

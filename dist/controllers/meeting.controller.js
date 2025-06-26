@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getBookedSlotsController = exports.cancelMeetingController = exports.createMeetBookingForGuestController = exports.getUserMeetingsController = void 0;
+exports.getAvailableSlotsController = exports.getBookedSlotsController = exports.cancelMeetingController = exports.createMeetBookingForGuestController = exports.getUserMeetingsController = void 0;
 const asyncHandler_middeware_1 = require("../middlewares/asyncHandler.middeware");
 const http_config_1 = require("../config/http.config");
 const meeting_enum_1 = require("../enums/meeting.enum");
@@ -30,7 +30,7 @@ exports.createMeetBookingForGuestController = (0, withValidation_middleware_1.as
 exports.cancelMeetingController = (0, withValidation_middleware_1.asyncHandlerAndValidation)(meeting_dto_1.MeetingIdDTO, "params", async (req, res, meetingIdDto) => {
     await (0, meeting_service_1.cancelMeetingService)(meetingIdDto.meetingId);
     return res.status(http_config_1.HTTPSTATUS.OK).json({
-        messsage: "Meeting cancelled successfully",
+        message: "Meeting cancelled successfully",
     });
 });
 exports.getBookedSlotsController = (0, withValidation_middleware_1.asyncHandlerAndValidation)(meeting_dto_1.EventIdDTO, "params", async (req, res, eventIdDto) => {
@@ -38,5 +38,32 @@ exports.getBookedSlotsController = (0, withValidation_middleware_1.asyncHandlerA
     return res.status(http_config_1.HTTPSTATUS.OK).json({
         message: "Booked slots retrieved successfully",
         bookedSlots,
+    });
+});
+exports.getAvailableSlotsController = (0, asyncHandler_middeware_1.asyncHandler)(async (req, res) => {
+    const { eventId, date } = req.query;
+    if (!eventId || !date) {
+        return res.status(http_config_1.HTTPSTATUS.BAD_REQUEST).json({
+            message: "eventId and date are required query parameters",
+        });
+    }
+    // Validate UUID format for eventId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(eventId)) {
+        return res.status(http_config_1.HTTPSTATUS.BAD_REQUEST).json({
+            message: "Invalid eventId format. Must be a valid UUID.",
+        });
+    }
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+        return res.status(http_config_1.HTTPSTATUS.BAD_REQUEST).json({
+            message: "Invalid date format. Use YYYY-MM-DD format.",
+        });
+    }
+    const availability = await (0, meeting_service_1.getAvailableSlotsService)(eventId, date);
+    return res.status(http_config_1.HTTPSTATUS.OK).json({
+        message: "Available slots retrieved successfully",
+        data: availability,
     });
 });
