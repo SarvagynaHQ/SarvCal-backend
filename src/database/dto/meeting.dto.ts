@@ -44,3 +44,13 @@ export class EventIdDTO {
   @IsNotEmpty()
   eventId: string;
 }
+
+export class AvailableSlotsDTO {
+  @IsUUID(4, { message: "Invalid event ID" })
+  @IsNotEmpty()
+  eventId: string;
+
+  @IsDateString()
+  @IsNotEmpty()
+  date: string; // Format: YYYY-MM-DD
+}

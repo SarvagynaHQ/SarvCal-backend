@@ -10,9 +10,10 @@ import {
   createMeetBookingForGuestService,
   getUserMeetingsService,
   getBookedSlotsByEventIdService,
+  getAvailableSlotsService,
 } from "../services/meeting.service";
 import { asyncHandlerAndValidation } from "../middlewares/withValidation.middleware";
-import { CreateMeetingDto, MeetingIdDTO, EventIdDTO } from "../database/dto/meeting.dto";
+import { CreateMeetingDto, MeetingIdDTO, EventIdDTO, AvailableSlotsDTO } from "../database/dto/meeting.dto";
 
 export const getUserMeetingsController = asyncHandler(
   async (req: Request, res: Response) => {
@@ -54,7 +55,7 @@ export const cancelMeetingController = asyncHandlerAndValidation(
   async (req: Request, res: Response, meetingIdDto) => {
     await cancelMeetingService(meetingIdDto.meetingId);
     return res.status(HTTPSTATUS.OK).json({
-      messsage: "Meeting cancelled successfully",
+      message: "Meeting cancelled successfully",
     });
   }
 );
@@ -67,6 +68,43 @@ export const getBookedSlotsController = asyncHandlerAndValidation(
     return res.status(HTTPSTATUS.OK).json({
       message: "Booked slots retrieved successfully",
       bookedSlots,
+    });
+  }
+);
+
+export const getAvailableSlotsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { eventId, date } = req.query;
+    
+    if (!eventId || !date) {
+      return res.status(HTTPSTATUS.BAD_REQUEST).json({
+        message: "eventId and date are required query parameters",
+      });
+    }
+
+    // Validate UUID format for eventId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(eventId as string)) {
+      return res.status(HTTPSTATUS.BAD_REQUEST).json({
+        message: "Invalid eventId format. Must be a valid UUID.",
+      });
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date as string)) {
+      return res.status(HTTPSTATUS.BAD_REQUEST).json({
+        message: "Invalid date format. Use YYYY-MM-DD format.",
+      });
+    }
+
+    const availability = await getAvailableSlotsService(
+      eventId as string, 
+      date as string
+    );
+    return res.status(HTTPSTATUS.OK).json({
+      message: "Available slots retrieved successfully",
+      data: availability,
     });
   }
 );

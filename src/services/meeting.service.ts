@@ -82,6 +82,175 @@ export const getBookedSlotsByEventIdService = async (eventId: string) => {
   return bookedSlots;
 };
 
+export const getAvailableSlotsService = async (eventId: string, date: string) => {
+  const meetingRepository = AppDataSource.getRepository(Meeting);
+  const eventRepository = AppDataSource.getRepository(Event);
+  const integrationRepository = AppDataSource.getRepository(Integration);
+
+  // Get the event with user info
+  const event = await eventRepository.findOne({
+    where: { id: eventId },
+    relations: ["user"]
+  });
+
+  if (!event) {
+    throw new NotFoundException("Event not found");
+  }
+
+  // Get calendar integration for the event owner
+  const calendarIntegration = await integrationRepository.findOne({
+    where: {
+      user: { id: event.user.id },
+      app_type: IntegrationAppTypeEnum.GOOGLE_MEET_AND_CALENDAR,
+    },
+  });
+
+  if (!calendarIntegration) {
+    throw new BadRequestException("No Google Calendar integration found for this event");
+  }
+
+  // Parse the date and validate it's not in the past
+  const requestedDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (requestedDate < today) {
+    throw new BadRequestException("Cannot check availability for past dates");
+  }
+
+  // Create time boundaries for the requested date
+  const startOfDay = new Date(requestedDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(requestedDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Generate potential time slots based on working hours
+  const potentialSlots: string[] = [];
+  const workingHours = {
+    start: 9, // 9 AM
+    end: 17,  // 5 PM
+    interval: 30 // 30 minutes
+  };
+
+  for (let hour = workingHours.start; hour < workingHours.end; hour++) {
+    for (let minute = 0; minute < 60; minute += workingHours.interval) {
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      potentialSlots.push(timeString);
+    }
+  }
+
+  // Get existing booked meetings for this event on the requested date
+  const bookedMeetings = await meetingRepository.find({
+    where: {
+      event: { id: eventId },
+      status: MeetingStatus.SCHEDULED,
+      startTime: MoreThan(startOfDay),
+      endTime: LessThan(endOfDay)
+    }
+  });
+
+  const bookedSlots = bookedMeetings.map(meeting => {
+    const startTime = new Date(meeting.startTime);
+    return startTime.toTimeString().slice(0, 5);
+  });
+
+  // Filter out slots that are too close to current time (e.g., less than 1 hour from now)
+  const now = new Date();
+  const minBookingTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+  
+  const filteredSlots = potentialSlots.filter(slot => {
+    const [slotHour, slotMinute] = slot.split(':').map(Number);
+    const slotDateTime = new Date(requestedDate);
+    slotDateTime.setHours(slotHour, slotMinute, 0, 0);
+    
+    // For today, only show slots that are at least 1 hour from now
+    if (requestedDate.toDateString() === now.toDateString()) {
+      return slotDateTime >= minBookingTime;
+    }
+    
+    return true;
+  });
+
+  try {
+    // Get Google Calendar events for the day
+    const { calendar } = await getCalendarClient(
+      calendarIntegration.app_type,
+      calendarIntegration.access_token,
+      calendarIntegration.refresh_token,
+      calendarIntegration.expiry_date
+    );
+
+    const calendarEvents = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: startOfDay.toISOString(),
+      timeMax: endOfDay.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    // Extract conflicting time slots from Google Calendar
+    const calendarConflicts: string[] = [];
+    if (calendarEvents.data.items) {
+      for (const calendarEvent of calendarEvents.data.items) {
+        if (calendarEvent.start?.dateTime && calendarEvent.end?.dateTime) {
+          const eventStart = new Date(calendarEvent.start.dateTime);
+          const eventEnd = new Date(calendarEvent.end.dateTime);
+          
+          // Skip all-day events or events without specific times
+          if (!calendarEvent.start.dateTime || !calendarEvent.end.dateTime) {
+            continue;
+          }
+          
+          // Find all time slots that overlap with this calendar event
+          for (const slot of filteredSlots) {
+            const [slotHour, slotMinute] = slot.split(':').map(Number);
+            const slotStart = new Date(requestedDate);
+            slotStart.setHours(slotHour, slotMinute, 0, 0);
+            const slotEnd = new Date(slotStart);
+            slotEnd.setMinutes(slotEnd.getMinutes() + event.duration);
+
+            // Check if slot overlaps with calendar event
+            if (slotStart < eventEnd && slotEnd > eventStart) {
+              calendarConflicts.push(slot);
+            }
+          }
+        }
+      }
+    }
+
+    // Filter out booked slots and calendar conflicts
+    const availableSlots = filteredSlots.filter(slot => 
+      !bookedSlots.includes(slot) && !calendarConflicts.includes(slot)
+    );
+
+    return {
+      date,
+      availableSlots,
+      bookedSlots,
+      calendarConflicts: [...new Set(calendarConflicts)], // Remove duplicates
+      eventDuration: event.duration,
+      workingHours: `${workingHours.start}:00 - ${workingHours.end}:00`,
+      minimumNotice: "60 minutes"
+    };
+
+  } catch (error) {
+    console.error('Error fetching Google Calendar events:', error);
+    // Fallback: return slots without calendar sync
+    const availableSlots = filteredSlots.filter(slot => !bookedSlots.includes(slot));
+    
+    return {
+      date,
+      availableSlots,
+      bookedSlots,
+      calendarConflicts: [],
+      eventDuration: event.duration,
+      workingHours: `${workingHours.start}:00 - ${workingHours.end}:00`,
+      minimumNotice: "60 minutes",
+      warning: "Could not sync with Google Calendar. Showing availability based on booked meetings only."
+    };
+  }
+};
+
 export const createMeetBookingForGuestService = async (
   createMeetingDto: CreateMeetingDto
 ) => {
