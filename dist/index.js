@@ -18,6 +18,7 @@ const event_route_1 = __importDefault(require("./routes/event.route"));
 const availability_route_1 = __importDefault(require("./routes/availability.route"));
 const integration_route_1 = __importDefault(require("./routes/integration.route"));
 const meeting_route_1 = __importDefault(require("./routes/meeting.route"));
+const calendar_route_1 = __importDefault(require("./routes/calendar.route"));
 const app = (0, express_1.default)();
 const BASE_PATH = app_config_1.config.BASE_PATH;
 app.use(express_1.default.json());
@@ -60,6 +61,7 @@ app.use(`${BASE_PATH}/event`, event_route_1.default);
 app.use(`${BASE_PATH}/availability`, availability_route_1.default);
 app.use(`${BASE_PATH}/integration`, integration_route_1.default);
 app.use(`${BASE_PATH}/meeting`, meeting_route_1.default);
+app.use(`${BASE_PATH}/calendar`, calendar_route_1.default);
 app.use(errorHandler_middleware_1.errorHandler);
 app.listen(app_config_1.config.PORT, async () => {
     await (0, database_1.initializeDatabase)();
