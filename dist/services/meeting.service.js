@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rescheduleMeetingService = exports.cancelMeetingService = exports.createMeetBookingForGuestService = exports.getAllBookedSlotsService = exports.getAvailableSlotsService = exports.getBookedSlotsByEventIdService = exports.getUserMeetingsService = void 0;
+exports.getMeetingDetailsService = exports.rescheduleMeetingService = exports.cancelMeetingService = exports.createMeetBookingForGuestService = exports.getAllBookedSlotsService = exports.getAvailableSlotsService = exports.getBookedSlotsByEventIdService = exports.getUserMeetingsService = void 0;
 const typeorm_1 = require("typeorm");
 const database_config_1 = require("../config/database.config");
 const meeting_entity_1 = require("../database/entities/meeting.entity");
@@ -438,6 +438,18 @@ const rescheduleMeetingService = async (rescheduleDto) => {
     return meeting;
 };
 exports.rescheduleMeetingService = rescheduleMeetingService;
+const getMeetingDetailsService = async (meetingId) => {
+    const meetingRepository = database_config_1.AppDataSource.getRepository(meeting_entity_1.Meeting);
+    const meeting = await meetingRepository.findOne({
+        where: { id: meetingId },
+        relations: ["event", "event.user"]
+    });
+    if (!meeting) {
+        throw new app_error_1.NotFoundException("Meeting not found");
+    }
+    return meeting;
+};
+exports.getMeetingDetailsService = getMeetingDetailsService;
 async function getCalendarClient(appType, access_token, refresh_token, expiry_date) {
     switch (appType) {
         case integration_entity_1.IntegrationAppTypeEnum.GOOGLE_MEET_AND_CALENDAR:

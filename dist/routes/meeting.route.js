@@ -11,4 +11,5 @@ meetingRoutes.get("/public/available-slots", meeting_controller_1.getAvailableSl
 meetingRoutes.get("/public/all-booked-slots", meeting_controller_1.getAllBookedSlotsController);
 meetingRoutes.put("/cancel/:meetingId", passport_config_1.passportAuthenticateJwt, meeting_controller_1.cancelMeetingController);
 meetingRoutes.put("/reschedule", meeting_controller_1.rescheduleMeetingController);
+meetingRoutes.get("/:meetingId", meeting_controller_1.getMeetingDetailsController);
 exports.default = meetingRoutes;

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rescheduleMeetingController = exports.getAllBookedSlotsController = exports.getAvailableSlotsController = exports.getBookedSlotsController = exports.cancelMeetingController = exports.createMeetBookingForGuestController = exports.getUserMeetingsController = void 0;
+exports.rescheduleMeetingController = exports.getMeetingDetailsController = exports.getAllBookedSlotsController = exports.getAvailableSlotsController = exports.getBookedSlotsController = exports.cancelMeetingController = exports.createMeetBookingForGuestController = exports.getUserMeetingsController = void 0;
 const asyncHandler_middeware_1 = require("../middlewares/asyncHandler.middeware");
 const http_config_1 = require("../config/http.config");
 const meeting_enum_1 = require("../enums/meeting.enum");
@@ -85,6 +85,14 @@ exports.getAllBookedSlotsController = (0, asyncHandler_middeware_1.asyncHandler)
         message: 'All booked slots retrieved successfully',
         date,
         bookedSlots
+    });
+});
+exports.getMeetingDetailsController = (0, asyncHandler_middeware_1.asyncHandler)(async (req, res) => {
+    const meetingId = req.params.meetingId;
+    const meeting = await (0, meeting_service_1.getMeetingDetailsService)(meetingId);
+    return res.status(http_config_1.HTTPSTATUS.OK).json({
+        message: "Meeting details retrieved successfully",
+        data: meeting
     });
 });
 exports.rescheduleMeetingController = (0, withValidation_middleware_1.asyncHandlerAndValidation)(meeting_dto_1.RescheduleMeetingDto, "body", async (req, res, rescheduleDto) => {
