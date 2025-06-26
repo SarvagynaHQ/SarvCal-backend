@@ -30,14 +30,17 @@ app.use((0, cors_1.default)({
         if (!origin)
             return callback(null, true);
         const allowedOrigins = [
-            app_config_1.config.FRONTEND_ORIGIN,
-            app_config_1.config.FRONTEND_ORIGIN.replace(/\/$/, ""), // Remove trailing slash
-            app_config_1.config.FRONTEND_ORIGIN + (app_config_1.config.FRONTEND_ORIGIN.endsWith("/") ? "" : "/"), // Add trailing slash
+            "https://sarvcal.vercel.app",
             "http://localhost:3000",
             "http://localhost:5173",
-            "https://sarvcal.vercel.app",
-            "https://sarvcal.vercel.app/"
+            app_config_1.config.FRONTEND_ORIGIN,
         ];
+        // Add variations of frontend origin if it exists and is not localhost
+        if (app_config_1.config.FRONTEND_ORIGIN && !app_config_1.config.FRONTEND_ORIGIN.includes('localhost')) {
+            allowedOrigins.push(app_config_1.config.FRONTEND_ORIGIN.replace(/\/$/, ""), // Remove trailing slash
+            app_config_1.config.FRONTEND_ORIGIN + (app_config_1.config.FRONTEND_ORIGIN.endsWith("/") ? "" : "/") // Add trailing slash
+            );
+        }
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         }

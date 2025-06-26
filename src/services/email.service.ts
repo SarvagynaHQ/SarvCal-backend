@@ -23,6 +23,7 @@ const getGmailClient = async (userId: string) => {
       user: { id: userId },
       app_type: IntegrationAppTypeEnum.GOOGLE_MEET_AND_CALENDAR,
     },
+    relations: ["user"]
   });
 
   if (!integration) {

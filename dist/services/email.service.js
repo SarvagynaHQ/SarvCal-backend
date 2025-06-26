@@ -14,6 +14,7 @@ const getGmailClient = async (userId) => {
             user: { id: userId },
             app_type: integration_entity_1.IntegrationAppTypeEnum.GOOGLE_MEET_AND_CALENDAR,
         },
+        relations: ["user"]
     });
     if (!integration) {
         throw new Error('No Google integration found for user');
