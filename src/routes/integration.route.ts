@@ -33,4 +33,9 @@ integrationRoutes.get("/google/callback", googleOAuthCallbackController);
 // New route for checking Google Calendar integration for a specific event
 integrationRoutes.get("/google-calendar/check/:eventId", checkGoogleCalendarIntegrationController);
 
+// Test endpoint to verify deployment
+integrationRoutes.get("/test", (req, res) => {
+  res.json({ message: "Integration routes working", timestamp: new Date().toISOString() });
+});
+
 export default integrationRoutes;
