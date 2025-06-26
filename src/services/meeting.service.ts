@@ -19,6 +19,7 @@ import { BadRequestException, NotFoundException } from "../utils/app-error";
 import { validateGoogleToken } from "./integration.service";
 import { googleOAuth2Client } from "../config/oauth.config";
 import { google } from "googleapis";
+import { sendMeetingConfirmationEmail, sendHostNotificationEmail, sendMeetingCancellationEmail } from "./email.service";
 
 export const getUserMeetingsService = async (
   userId: string,
@@ -331,6 +332,18 @@ export const createMeetBookingForGuestService = async (
 
   await meetingRepository.save(meeting);
 
+  // Send email notifications
+  try {
+    // Send confirmation email to guest
+    await sendMeetingConfirmationEmail(meeting, event);
+    
+    // Send notification email to host
+    await sendHostNotificationEmail(meeting, event);
+  } catch (emailError) {
+    console.error('Failed to send meeting emails:', emailError);
+    // Don't fail the meeting creation if email fails
+  }
+
   return {
     meetLink,
     meeting,
@@ -396,6 +409,15 @@ export const cancelMeetingService = async (meetingId: string) => {
 
   meeting.status = MeetingStatus.CANCELLED;
   await meetingRepository.save(meeting);
+
+  // Send cancellation email notifications
+  try {
+    await sendMeetingCancellationEmail(meeting, meeting.event, 'host');
+  } catch (emailError) {
+    console.error('Failed to send cancellation emails:', emailError);
+    // Don't fail the cancellation if email fails
+  }
+
   return { success: true };
 };
 

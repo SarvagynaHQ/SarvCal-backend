@@ -11,6 +11,7 @@ const app_error_1 = require("../utils/app-error");
 const integration_service_1 = require("./integration.service");
 const oauth_config_1 = require("../config/oauth.config");
 const googleapis_1 = require("googleapis");
+const email_service_1 = require("./email.service");
 const getUserMeetingsService = async (userId, filter) => {
     const meetingRepository = database_config_1.AppDataSource.getRepository(meeting_entity_1.Meeting);
     const where = { user: { id: userId } };
@@ -264,6 +265,17 @@ const createMeetBookingForGuestService = async (createMeetingDto) => {
         calendarAppType: calendarAppType,
     });
     await meetingRepository.save(meeting);
+    // Send email notifications
+    try {
+        // Send confirmation email to guest
+        await (0, email_service_1.sendMeetingConfirmationEmail)(meeting, event);
+        // Send notification email to host
+        await (0, email_service_1.sendHostNotificationEmail)(meeting, event);
+    }
+    catch (emailError) {
+        console.error('Failed to send meeting emails:', emailError);
+        // Don't fail the meeting creation if email fails
+    }
     return {
         meetLink,
         meeting,
@@ -316,6 +328,14 @@ const cancelMeetingService = async (meetingId) => {
     }
     meeting.status = meeting_entity_1.MeetingStatus.CANCELLED;
     await meetingRepository.save(meeting);
+    // Send cancellation email notifications
+    try {
+        await (0, email_service_1.sendMeetingCancellationEmail)(meeting, meeting.event, 'host');
+    }
+    catch (emailError) {
+        console.error('Failed to send cancellation emails:', emailError);
+        // Don't fail the cancellation if email fails
+    }
     return { success: true };
 };
 exports.cancelMeetingService = cancelMeetingService;
