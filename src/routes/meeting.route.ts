@@ -6,6 +6,7 @@ import {
   getBookedSlotsController,
   getAvailableSlotsController,
   getAllBookedSlotsController,
+  rescheduleMeetingController,
 } from "../controllers/meeting.controller";
 import { passportAuthenticateJwt } from "../config/passport.config";
 
@@ -30,5 +31,7 @@ meetingRoutes.put(
   passportAuthenticateJwt,
   cancelMeetingController
 );
+
+meetingRoutes.put("/reschedule", rescheduleMeetingController);
 
 export default meetingRoutes;

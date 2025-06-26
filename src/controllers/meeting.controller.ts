@@ -12,9 +12,10 @@ import {
   getBookedSlotsByEventIdService,
   getAvailableSlotsService,
   getAllBookedSlotsService,
+  rescheduleMeetingService
 } from "../services/meeting.service";
 import { asyncHandlerAndValidation } from "../middlewares/withValidation.middleware";
-import { CreateMeetingDto, MeetingIdDTO, EventIdDTO, AvailableSlotsDTO } from "../database/dto/meeting.dto";
+import { CreateMeetingDto, MeetingIdDTO, EventIdDTO, AvailableSlotsDTO, RescheduleMeetingDto } from "../database/dto/meeting.dto";
 
 export const getUserMeetingsController = asyncHandler(
   async (req: Request, res: Response) => {
@@ -133,6 +134,22 @@ export const getAllBookedSlotsController = asyncHandler(
       message: 'All booked slots retrieved successfully',
       date,
       bookedSlots
+    });
+  }
+);
+
+export const rescheduleMeetingController = asyncHandlerAndValidation(
+  RescheduleMeetingDto,
+  "body",
+  async (req: Request, res: Response, rescheduleDto) => {
+    const meeting = await rescheduleMeetingService(rescheduleDto);
+    
+    return res.status(HTTPSTATUS.OK).json({
+      message: "Meeting rescheduled successfully",
+      data: {
+        meeting,
+        meetLink: meeting.meetLink
+      }
     });
   }
 );

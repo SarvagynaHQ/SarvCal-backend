@@ -87,6 +87,12 @@ const generateMeetingConfirmationEmail = (meeting: Meeting, event: Event) => {
     timeZoneName: 'short',
   });
 
+  const rescheduleButton = `
+    <a href="https://sarvcal.vercel.app/reschedule/${meeting.id}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 20px;">
+      Reschedule Meeting
+    </a>
+  `;
+
   return `
     <!DOCTYPE html>
     <html>
@@ -129,6 +135,8 @@ const generateMeetingConfirmationEmail = (meeting: Meeting, event: Event) => {
                 
                 <p>We look forward to meeting with you!</p>
                 <p>If you need to make any changes, please contact us.</p>
+                <p>If you need to reschedule, click the button below:</p>
+                ${rescheduleButton}
             </div>
             <div class="footer">
                 <p>This meeting was scheduled through SarvCal</p>
@@ -153,6 +161,12 @@ const generateHostNotificationEmail = (meeting: Meeting, event: Event) => {
     minute: '2-digit',
     timeZoneName: 'short',
   });
+
+  const rescheduleButton = `
+    <a href="https://sarvcal.vercel.app/reschedule/${meeting.id}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 20px;">
+      Reschedule Meeting
+    </a>
+  `;
 
   return `
     <!DOCTYPE html>
@@ -195,6 +209,8 @@ const generateHostNotificationEmail = (meeting: Meeting, event: Event) => {
                 ` : ''}
                 
                 <p>The meeting has been added to your calendar.</p>
+                <p>The guest can reschedule using this link:</p>
+                ${rescheduleButton}
             </div>
             <div class="footer">
                 <p>This notification was sent by SarvCal</p>

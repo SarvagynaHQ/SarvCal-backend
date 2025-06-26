@@ -5,7 +5,7 @@ import {
   MeetingFilterEnum,
   MeetingFilterEnumType,
 } from "../enums/meeting.enum";
-import { CreateMeetingDto } from "../database/dto/meeting.dto";
+import { CreateMeetingDto, RescheduleMeetingDto } from "../database/dto/meeting.dto";
 import {
   Event,
   EventLocationEnumType,
@@ -466,6 +466,76 @@ export const cancelMeetingService = async (meetingId: string) => {
   }
 
   return { success: true };
+};
+
+export const rescheduleMeetingService = async (rescheduleDto: RescheduleMeetingDto) => {
+  const meetingRepository = AppDataSource.getRepository(Meeting);
+  const integrationRepository = AppDataSource.getRepository(Integration);
+  
+  const meeting = await meetingRepository.findOne({
+    where: { id: rescheduleDto.meetingId },
+    relations: ["event", "event.user"]
+  });
+
+  if (!meeting) {
+    throw new NotFoundException("Meeting not found");
+  }
+
+  if (meeting.status === MeetingStatus.CANCELLED) {
+    throw new BadRequestException("Cannot reschedule a cancelled meeting");
+  }
+
+  const newStartTime = new Date(rescheduleDto.newStartTime);
+  const newEndTime = new Date(rescheduleDto.newEndTime);
+
+  // Update calendar event if it exists
+  if (meeting.calendarEventId) {
+    try {
+      const calendarIntegration = await integrationRepository.findOne({
+        where: {
+          user: { id: meeting.event.user.id },
+          app_type: IntegrationAppTypeEnum.GOOGLE_MEET_AND_CALENDAR,
+        }
+      });
+
+      if (calendarIntegration) {
+        const { calendar } = await getCalendarClient(
+          calendarIntegration.app_type,
+          calendarIntegration.access_token,
+          calendarIntegration.refresh_token,
+          calendarIntegration.expiry_date
+        );
+
+        await calendar.events.patch({
+          calendarId: "primary",
+          eventId: meeting.calendarEventId,
+          requestBody: {
+            start: { dateTime: newStartTime.toISOString() },
+            end: { dateTime: newEndTime.toISOString() }
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update calendar event:", error);
+      throw new BadRequestException("Failed to update calendar event");
+    }
+  }
+
+  // Update meeting in database
+  meeting.startTime = newStartTime;
+  meeting.endTime = newEndTime;
+  await meetingRepository.save(meeting);
+
+  // Send updated confirmation emails
+  try {
+    await sendMeetingConfirmationEmail(meeting, meeting.event);
+    await sendHostNotificationEmail(meeting, meeting.event);
+  } catch (emailError) {
+    console.error('Failed to send reschedule emails:', emailError);
+    // Don't fail the rescheduling if email fails
+  }
+
+  return meeting;
 };
 
 async function getCalendarClient(

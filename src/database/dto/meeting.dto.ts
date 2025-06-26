@@ -54,3 +54,15 @@ export class AvailableSlotsDTO {
   @IsNotEmpty()
   date: string; // Format: YYYY-MM-DD
 }
+
+export class RescheduleMeetingDto {
+  @IsString()
+  @IsNotEmpty()
+  meetingId: string;
+
+  @IsDateString()
+  newStartTime: string;
+
+  @IsDateString()
+  newEndTime: string;
+}
