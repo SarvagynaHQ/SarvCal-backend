@@ -25,39 +25,26 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(passport.initialize());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      const allowedOrigins = [
-        "https://sarvcal.vercel.app",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        config.FRONTEND_ORIGIN,
-      ];
-      
-      // Add variations of frontend origin if it exists and is not localhost
-      if (config.FRONTEND_ORIGIN && !config.FRONTEND_ORIGIN.includes('localhost')) {
-        allowedOrigins.push(
-          config.FRONTEND_ORIGIN.replace(/\/$/, ""), // Remove trailing slash
-          config.FRONTEND_ORIGIN + (config.FRONTEND_ORIGIN.endsWith("/") ? "" : "/") // Add trailing slash
-        );
-      }
-      
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log(`CORS blocked origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  })
-);
+const allowedOrigins = [
+  process.env.FRONTEND_ORIGIN,
+  'https://sarvcal.vercel.app',
+  'http://localhost:3000',
+  'https://sarvcal.vercel.app'
+];
+
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 app.get(
   "/",
