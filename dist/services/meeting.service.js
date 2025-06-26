@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelMeetingService = exports.createMeetBookingForGuestService = exports.getAllBookedSlotsService = exports.getAvailableSlotsService = exports.getBookedSlotsByEventIdService = exports.getUserMeetingsService = void 0;
+exports.rescheduleMeetingService = exports.cancelMeetingService = exports.createMeetBookingForGuestService = exports.getAllBookedSlotsService = exports.getAvailableSlotsService = exports.getBookedSlotsByEventIdService = exports.getUserMeetingsService = void 0;
 const typeorm_1 = require("typeorm");
 const database_config_1 = require("../config/database.config");
 const meeting_entity_1 = require("../database/entities/meeting.entity");
@@ -381,6 +381,63 @@ const cancelMeetingService = async (meetingId) => {
     return { success: true };
 };
 exports.cancelMeetingService = cancelMeetingService;
+const rescheduleMeetingService = async (rescheduleDto) => {
+    const meetingRepository = database_config_1.AppDataSource.getRepository(meeting_entity_1.Meeting);
+    const integrationRepository = database_config_1.AppDataSource.getRepository(integration_entity_1.Integration);
+    const meeting = await meetingRepository.findOne({
+        where: { id: rescheduleDto.meetingId },
+        relations: ["event", "event.user"]
+    });
+    if (!meeting) {
+        throw new app_error_1.NotFoundException("Meeting not found");
+    }
+    if (meeting.status === meeting_entity_1.MeetingStatus.CANCELLED) {
+        throw new app_error_1.BadRequestException("Cannot reschedule a cancelled meeting");
+    }
+    const newStartTime = new Date(rescheduleDto.newStartTime);
+    const newEndTime = new Date(rescheduleDto.newEndTime);
+    // Update calendar event if it exists
+    if (meeting.calendarEventId) {
+        try {
+            const calendarIntegration = await integrationRepository.findOne({
+                where: {
+                    user: { id: meeting.event.user.id },
+                    app_type: integration_entity_1.IntegrationAppTypeEnum.GOOGLE_MEET_AND_CALENDAR,
+                }
+            });
+            if (calendarIntegration) {
+                const { calendar } = await getCalendarClient(calendarIntegration.app_type, calendarIntegration.access_token, calendarIntegration.refresh_token, calendarIntegration.expiry_date);
+                await calendar.events.patch({
+                    calendarId: "primary",
+                    eventId: meeting.calendarEventId,
+                    requestBody: {
+                        start: { dateTime: newStartTime.toISOString() },
+                        end: { dateTime: newEndTime.toISOString() }
+                    }
+                });
+            }
+        }
+        catch (error) {
+            console.error("Failed to update calendar event:", error);
+            throw new app_error_1.BadRequestException("Failed to update calendar event");
+        }
+    }
+    // Update meeting in database
+    meeting.startTime = newStartTime;
+    meeting.endTime = newEndTime;
+    await meetingRepository.save(meeting);
+    // Send updated confirmation emails
+    try {
+        await (0, email_service_1.sendMeetingConfirmationEmail)(meeting, meeting.event);
+        await (0, email_service_1.sendHostNotificationEmail)(meeting, meeting.event);
+    }
+    catch (emailError) {
+        console.error('Failed to send reschedule emails:', emailError);
+        // Don't fail the rescheduling if email fails
+    }
+    return meeting;
+};
+exports.rescheduleMeetingService = rescheduleMeetingService;
 async function getCalendarClient(appType, access_token, refresh_token, expiry_date) {
     switch (appType) {
         case integration_entity_1.IntegrationAppTypeEnum.GOOGLE_MEET_AND_CALENDAR:

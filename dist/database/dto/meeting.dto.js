@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AvailableSlotsDTO = exports.EventIdDTO = exports.MeetingIdDTO = exports.CreateMeetingDto = void 0;
+exports.RescheduleMeetingDto = exports.AvailableSlotsDTO = exports.EventIdDTO = exports.MeetingIdDTO = exports.CreateMeetingDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateMeetingDto {
 }
@@ -73,3 +73,19 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], AvailableSlotsDTO.prototype, "date", void 0);
+class RescheduleMeetingDto {
+}
+exports.RescheduleMeetingDto = RescheduleMeetingDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], RescheduleMeetingDto.prototype, "meetingId", void 0);
+__decorate([
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], RescheduleMeetingDto.prototype, "newStartTime", void 0);
+__decorate([
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], RescheduleMeetingDto.prototype, "newEndTime", void 0);
