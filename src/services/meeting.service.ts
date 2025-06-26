@@ -538,6 +538,20 @@ export const rescheduleMeetingService = async (rescheduleDto: RescheduleMeetingD
   return meeting;
 };
 
+export const getMeetingDetailsService = async (meetingId: string) => {
+  const meetingRepository = AppDataSource.getRepository(Meeting);
+  const meeting = await meetingRepository.findOne({
+    where: { id: meetingId },
+    relations: ["event", "event.user"]
+  });
+
+  if (!meeting) {
+    throw new NotFoundException("Meeting not found");
+  }
+
+  return meeting;
+};
+
 async function getCalendarClient(
   appType: IntegrationAppTypeEnum,
   access_token: string,
