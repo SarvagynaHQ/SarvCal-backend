@@ -5,6 +5,7 @@ import {
   connectAppController,
   getUserIntegrationsController,
   googleOAuthCallbackController,
+  checkGoogleCalendarIntegrationController,
 } from "../controllers/integration.controller";
 
 const integrationRoutes = Router();
@@ -28,5 +29,8 @@ integrationRoutes.get(
 );
 
 integrationRoutes.get("/google/callback", googleOAuthCallbackController);
+
+// New route for checking Google Calendar integration for a specific event
+integrationRoutes.get("/google-calendar/check/:eventId", checkGoogleCalendarIntegrationController);
 
 export default integrationRoutes;

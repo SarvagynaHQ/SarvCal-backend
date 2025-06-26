@@ -9,6 +9,8 @@ import {
 import { BadRequestException } from "../utils/app-error";
 import { googleOAuth2Client } from "../config/oauth.config";
 import { encodeState } from "../utils/helper";
+import { Event } from "../database/entities/event.entity";
+import { NotFoundException } from "../utils/app-error";
 
 const appTypeToProviderMap: Record<
   IntegrationAppTypeEnum,
@@ -153,4 +155,45 @@ export const validateGoogleToken = async (
   }
 
   return accessToken;
+};
+
+export const checkGoogleCalendarIntegrationForEventService = async (eventId: string) => {
+  const eventRepository = AppDataSource.getRepository(Event);
+  const integrationRepository = AppDataSource.getRepository(Integration);
+
+  // First, find the event and get the user ID
+  const event = await eventRepository.findOne({
+    where: { id: eventId },
+    relations: ["user"]
+  });
+
+  if (!event) {
+    throw new NotFoundException("Event not found");
+  }
+
+  // Check if the event owner has Google Calendar integration
+  const integration = await integrationRepository.findOne({
+    where: {
+      user: { id: event.user.id },
+      app_type: IntegrationAppTypeEnum.GOOGLE_MEET_AND_CALENDAR,
+    },
+  });
+
+  const isConnected = !!integration;
+  
+  return {
+    isConnected,
+    eventId,
+    eventTitle: event.title,
+    eventOwner: {
+      id: event.user.id,
+      email: event.user.email
+    },
+    integration: isConnected ? {
+      provider: integration!.provider,
+      app_type: integration!.app_type,
+      category: integration!.category,
+      connectedAt: integration!.createdAt
+    } : null
+  };
 };

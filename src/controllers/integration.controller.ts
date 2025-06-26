@@ -6,6 +6,7 @@ import {
   connectAppService,
   createIntegrationService,
   getUserIntegrationsService,
+  checkGoogleCalendarIntegrationForEventService,
 } from "../services/integration.service";
 import { asyncHandlerAndValidation } from "../middlewares/withValidation.middleware";
 import { AppTypeDTO } from "../database/dto/integration.dto";
@@ -106,5 +107,32 @@ export const googleOAuthCallbackController = asyncHandler(
     });
 
     return res.redirect(`${CLIENT_URL}&success=true`);
+  }
+);
+
+export const checkGoogleCalendarIntegrationController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { eventId } = req.params;
+    
+    if (!eventId) {
+      return res.status(HTTPSTATUS.BAD_REQUEST).json({
+        message: "eventId is required",
+      });
+    }
+
+    // Validate UUID format for eventId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(eventId)) {
+      return res.status(HTTPSTATUS.BAD_REQUEST).json({
+        message: "Invalid eventId format. Must be a valid UUID.",
+      });
+    }
+
+    const integrationInfo = await checkGoogleCalendarIntegrationForEventService(eventId);
+    
+    return res.status(HTTPSTATUS.OK).json({
+      message: "Google Calendar integration checked successfully",
+      ...integrationInfo,
+    });
   }
 );
